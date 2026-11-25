@@ -1,0 +1,20 @@
+{
+  "slug": "lookout",
+  "title": "Lookout",
+  "tagline": "Plant hedges. Give every odd little lookout exactly the view it asked for.",
+  "description": "Each robot lookout wants to see an exact number of tiles down its row and column. Plant hedges to block the views, never side by side and never cutting the field in two. Three fresh fields every day, a 40-level journey that teaches the tricks, and endless free play, all solvable by pure logic with a hint that explains its reasoning.",
+  "genre": "Logic puzzle",
+  "kinds": ["Puzzle"],
+  "daily": true,
+  "verb": "Deduce",
+  "tone": "yellow",
+  "players": "1 player",
+  "session": "1–10 min puzzles",
+  "controls": ["Keyboard", "Mouse", "Touch"],
+  "version": "1.0.0",
+  "released": "2026-11-24",
+  "updated": "2026-11-24",
+  "repo": "https://github.com/JohnGarrisonDev/lookout",
+  "cover": "cover.webp",
+  "coverAlt": "Illustration: odd little robots stand on lookout towers in a field of square hedges, each peering down a long row with a telescope."
+}
