@@ -9,6 +9,7 @@ Lookout is an Oddvale Games title. Read the hub's `GAME_GUIDE.md` first (no buil
 - `src/ui.js` builds the DOM overlays once and exposes dumb setters. Buttons carry `data-act="name"`; one click listener calls `actions[name](dataset, element)`.
 - `src/render.js` draws the canvas every frame from a session plus an `anim` object (`makeAnim`: when each tile last changed, when a hedge became "bad", solve time, the hint on show, mistake flags). Logic is instant; visuals catch up.
 - The canvas fills the stage. DOM layouts contain an empty `.slot`; `main.js` measures it and `layoutBoard` fits the board inside. So layout is CSS: move the slot, the board follows.
+- `kit/talk.js` (hub kit, do not edit) adds the anonymous player-input widgets: `dailyTalk` fills a `.talk-slot` at the bottom of the solved card for **today's** daily fields only (boards `small`/`medium`/`large` from ids `s`/`m`/`l`, score = the recorded solve time in whole seconds, lower is better), and `tellUs` fills `#tell-us` in the info section. Both stay hidden when the studio API is unreachable.
 - `main.js` adds `.portrait` to the stage when it is taller than wide and sets the `.ui` font-size from the stage size. All sizes in `game.css` are in `em`. The stage is always a sunny field, also in dark mode.
 
 ## Rules and cell codes

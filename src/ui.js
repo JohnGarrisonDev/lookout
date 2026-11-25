@@ -239,7 +239,9 @@ export function createUI(root, actions) {
         <dl class="result">${d.lines.map(([k, v]) => `<div><dt>${esc(k)}</dt><dd>${esc(v)}</dd></div>`).join('')}</dl>
         ${d.notes.map((n) => `<p class="note">${esc(n)}</p>`).join('')}
         ${daily}
-        <div class="row">${d.buttons.map((b) => `<button class="btn ${b.primary ? 'primary' : 'small'}" data-act="${b.act}" ${b.id ? `data-id="${b.id}"` : ''}>${esc(b.label)}</button>`).join('')}</div>`, 'solved')
+        <div class="row">${d.buttons.map((b) => `<button class="btn ${b.primary ? 'primary' : 'small'}" data-act="${b.act}" ${b.id ? `data-id="${b.id}"` : ''}>${esc(b.label)}</button>`).join('')}</div>
+        ${d.talk ? '<div class="talk-slot" hidden></div>' : ''}`, 'solved')
+      return f('sheet').querySelector('.talk-slot')
     },
 
     toast(text, ms = 2400) {

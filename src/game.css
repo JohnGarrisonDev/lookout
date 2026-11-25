@@ -226,3 +226,12 @@
 
 /* Page (outside the stage): keys on the yellow Controls card stay readable in dark mode. */
 .card.yellow kbd { background: #fffdf8; border-color: #17131f; }
+
+/* ---- talk.js widget on the solved card (kit/talk.js, styles in kit/shell.css) */
+.sheet .talk { justify-self: stretch; text-align: center; }
+.sheet .talk-row { justify-content: center; }
+.sheet .talk-daily { gap: 6px; margin-top: 0; padding-top: 10px; }
+.sheet .talk-daily.compact .talk-choice { padding: 6px 9px; }
+/* Phones: the card already sits over the lower half of the field; with the vote under it, cap it and let it scroll. */
+.portrait .modal.solved .sheet { max-height: 66%; }
+.sheet .talk-daily .talk-row { gap: 6px; }

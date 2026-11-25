@@ -1,5 +1,6 @@
 // Lookout entry point: app state, screen flow, input, frame loop, saving. Rules live in src/logic (pure, tested).
 import { makeStore, wireChrome } from '../kit/kit.js'
+import { dailyTalk, tellUs } from '../kit/talk.js'
 import { H } from './logic/rules.js'
 import { generate, BANDS, BAND_IDS, MIN_SIZE, MAX_SIZE } from './logic/generate.js'
 import { hintFor } from './logic/solver.js'
@@ -20,6 +21,7 @@ const motion = window.matchMedia('(prefers-reduced-motion: reduce)')
 const R = createRenderer(canvas), confetti = createConfetti()
 const WEEK = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'], MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
 const prettyDate = (key) => { const d = dayParts(key); return `${WEEK[d.weekday]} ${d.day} ${MONTHS[d.month]}` }
+const TALK_BOARD = { s: 'small', m: 'medium', l: 'large' } // daily id -> board id in the studio API
 const BAND_NOTES = {
   gentle: 'Counting and fencing in. A calm stroll.',
   medium: 'Long reaches, and keeping the field in one piece.',
@@ -386,7 +388,11 @@ function showSolved(animate) {
     heading = r.hints || r.checks ? 'Every lookout happy!' : 'Clean sweep!'
     buttons.push({ act: 'free-start', label: 'New field', primary: true }, { act: 'free', label: 'Change size' }, { act: 'title', label: 'Title' })
   }
-  ui.openSolved({ heading, sub, stars, animate: animate && !motion.matches, lines, notes, daily, buttons })
+  // Anonymous "you beat N%" and difficulty vote: today's daily fields only (never archive days, the Journey or free play).
+  const rec = r.mode === 'daily' && save.daily.history[meta.date] && save.daily.history[meta.date][meta.id]
+  const talk = !!rec && !rec.late && meta.date === dateKey()
+  const slot = ui.openSolved({ heading, sub, stars, animate: animate && !motion.matches, lines, notes, daily, buttons, talk })
+  if (talk && slot) dailyTalk(slot, { game: 'lookout', key: meta.date, board: TALK_BOARD[meta.id], score: rec.t, label: `${meta.label} field`, compact: true })
   if (animate) for (let k = 0; k < stars; k++) setTimeout(() => snd.star(k), 380 + k * 260)
 }
 
@@ -606,6 +612,7 @@ document.fonts?.ready.then(relayout)
 // ------------------------------------------------------------------ boot
 
 wireChrome({ stage })
+tellUs(document.getElementById('tell-us'), { game: 'lookout', issueUrl: 'https://github.com/JohnGarrisonDev/lookout/issues/new?template=feedback.yml' })
 {
   const today = dateKey(), p = save.progress, l = save.last
   if (l && l.mode === 'journey' && p.journey) startJourney(p.journey.level)

@@ -2,6 +2,12 @@
 
 Newest first. Written for players.
 
+## 1.1.0 (2026-11-25)
+
+- After each of today's fields, tell us how hard it was with one tap, and see how your time compares with everyone else's today. Anonymous: nothing about you is stored.
+- A new "Tell us" card under the game: a thumbs up or down and a few one-tap notes (too hard, too easy, broke on my phone...), no account needed.
+- A Privacy link in the footer.
+
 ## 1.0.0 (2026-11-24)
 
 First release.
