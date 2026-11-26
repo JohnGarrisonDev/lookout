@@ -8,6 +8,13 @@
   <link rel="canonical" href="https://games.oddvale.com/lookout/" />
   <meta name="theme-color" content="#17131f" />
   <link rel="icon" href="kit/favicon.svg" type="image/svg+xml" />
+  <!-- "Add to Home Screen" opens the whole arcade like an app (no browser bars), from any game page. -->
+  <link rel="manifest" href="../site.webmanifest" />
+  <link rel="apple-touch-icon" href="../apple-touch-icon.png" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-title" content="Oddvale Games" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta property="og:type" content="website" />
   <meta property="og:site_name" content="Oddvale Games" />
   <meta property="og:title" content="Lookout — Oddvale Games" />
@@ -49,7 +56,7 @@
       <!-- All game UI (menus, HUD, game over) lives inside the stage so it works in full screen. -->
       <div class="stage" id="stage">
         <canvas id="game" aria-label="Lookout puzzle field. Arrow keys move, Space cycles a tile, X plants a hedge, D marks a dot."></canvas>
-        <div class="ui" id="ui"></div>
+        <div class="ui stage-inset" id="ui"></div>
       </div>
       <section class="info">
         <div class="card tilt-l"><h2>How to play</h2><ul>
@@ -61,7 +68,7 @@
           <li><b>Hint</b> explains the next logical step. <b>Check</b> crosses out marks that do not fit.</li>
         </ul></div>
         <div class="card yellow"><h2>Controls</h2><ul>
-          <li><b>Touch:</b> tap a tile to cycle empty, hedge, dot. Long-press for a dot. Drag to paint several tiles. Tap a lookout to see its sight lines.</li>
+          <li><b>Touch:</b> tap a tile to cycle empty, hedge, dot. Long-press for a dot. Drag to paint several tiles: a ring shows the tile under your finger. Tap a lookout to see its sight lines. The buttons under the field undo, redo, switch hedge-first or dot-first, hint and check.</li>
           <li><b>Mouse:</b> click to cycle, right-click or <kbd>Shift</kbd>-click for a dot, drag to paint.</li>
           <li><b>Keyboard:</b> arrows move, <kbd>Space</kbd> or <kbd>Enter</kbd> cycles, <kbd>X</kbd> hedge, <kbd>D</kbd> dot.</li>
           <li><kbd>Z</kbd> undo · <kbd>Y</kbd> redo · <kbd>H</kbd> hint · <kbd>C</kbd> check · <kbd>M</kbd> hedge-first or dot-first · <kbd>Esc</kbd> menu</li>
@@ -74,7 +81,7 @@
 
   <footer class="footer">
     <div class="wrap">
-      <span>Lookout v1.1.0 · An <a href="https://oddvale.com">Oddvale</a> game. Your progress is saved in this browser only.</span>
+      <span>Lookout v1.2.0 · An <a href="https://oddvale.com">Oddvale</a> game. Your progress is saved in this browser only.</span>
       <span><a href="../">More games</a> · <a href="https://github.com/JohnGarrisonDev/lookout/issues/new?template=feedback.yml" target="_blank" rel="noopener">Feedback</a> · <a href="../privacy/">Privacy</a> · <a href="https://github.com/JohnGarrisonDev/lookout">Source</a></span>
     </div>
   </footer>

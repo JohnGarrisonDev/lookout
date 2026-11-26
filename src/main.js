@@ -1,5 +1,5 @@
 // Lookout entry point: app state, screen flow, input, frame loop, saving. Rules live in src/logic (pure, tested).
-import { makeStore, wireChrome } from '../kit/kit.js'
+import { makeStore, wireChrome, haptic } from '../kit/kit.js'
 import { dailyTalk, tellUs } from '../kit/talk.js'
 import { H } from './logic/rules.js'
 import { generate, BANDS, BAND_IDS, MIN_SIZE, MAX_SIZE } from './logic/generate.js'
@@ -8,7 +8,7 @@ import { createSession, setCell, beginStroke, endStroke, undo, redo, clearAll, c
 import { CHAPTERS, LEVEL_COUNT, PER_CHAPTER, journeyLevel, levelLabel, isUnlocked } from './logic/levels.js'
 import { DAILY, ARCHIVE_DAYS, dateKey, shiftDay, dayParts, dailyPuzzle, streakInfo, formatTime, shareText } from './logic/daily.js'
 import { defaults, sanitize, recordJourney, recordDaily, pruneDailyProgress, totalStars, solvedCount } from './logic/save.js'
-import { createRenderer, layoutBoard, hitTile, tileCentre, makeAnim } from './render.js'
+import { createRenderer, layoutBoard, hitTile, hitTileNear, hitTileSticky, tileCentre, makeAnim } from './render.js'
 import { createConfetti } from './fx.js'
 import { createUI } from './ui.js'
 import { snd } from './audio.js'
@@ -255,6 +255,7 @@ function afterChange(before) {
       if (info.bad[i] && !before.bad[i]) { app.anim.badAt[i] = now; newBad = true }
       if (info.mood[i] !== before.mood[i]) { app.anim.moodAt[i] = now; if (info.mood[i] === 1) newHappy = true; else if (info.mood[i] === 2) newWorry = true }
     }
+    if (newBad && !s.solved) haptic([25, 40, 25])
     if (!s.solved) { if (newBad) snd.bad(); else if (newHappy) snd.happy(info.happy); else if (newWorry) snd.worry() }
   }
   syncHud(); syncTools()
@@ -343,6 +344,7 @@ function onSolved() {
   } else save.free.solved++
   app.result = res
   app.focus = -1; app.cursorOn = false
+  haptic([20, 60, 30])
   app.celebrateAt = performance.now() + 140
   app.cardAt = app.celebrateAt + (motion.matches ? 600 : 1900)
   ui.setTip('')
@@ -425,7 +427,9 @@ canvas.addEventListener('pointerdown', (e) => {
   app.pointer = { x, y }
   if (!playing() || (e.pointerType === 'mouse' && e.button !== 0 && e.button !== 2)) return
   if (app.drag) return // a second finger does nothing
-  const s = app.session, i = hitTile(app.view, x, y)
+  const touch = e.pointerType !== 'mouse'
+  // Fingers get a little slack around the board's edge (a tap just outside the frame still lands on the edge tile).
+  const s = app.session, i = touch ? hitTileNear(app.view, x, y, 0.4) : hitTile(app.view, x, y)
   if (i < 0) return
   e.preventDefault()
   app.cursor = i; app.cursorOn = false
@@ -433,16 +437,16 @@ canvas.addEventListener('pointerdown', (e) => {
   const alt = e.button === 2 || e.shiftKey, from = s.cells[i]
   const to = alt ? (from === DOT ? EMPTY : DOT) : cycle(from, save.settings.dotFirst)
   beginStroke(s)
-  const d = app.drag = { id: e.pointerId, from, to, last: i, x, y, moved: false, timer: 0 }
+  const d = app.drag = { id: e.pointerId, from, to, last: i, x, y, moved: false, timer: 0, touch }
   try { canvas.setPointerCapture(e.pointerId) } catch { /* synthetic events have no live pointer */ }
-  place(i, to)
+  if (place(i, to) && touch) haptic(8)
   if (!alt && app.drag === d) {
     d.timer = setTimeout(() => { // long press: straight to a dot
       if (app.drag !== d || d.moved) return
       const dot = from === DOT ? EMPTY : DOT
       if (dot === d.to) return
       d.to = dot
-      if (navigator.userActivation?.hasBeenActive) { try { navigator.vibrate?.(12) } catch { /* not allowed */ } }
+      if (navigator.userActivation?.hasBeenActive) haptic(12)
       place(i, dot)
     }, LONG_MS)
   }
@@ -454,7 +458,9 @@ canvas.addEventListener('pointermove', (e) => {
   // walk the line from the last point so a fast swipe does not skip tiles
   const steps = Math.max(1, Math.ceil(Math.hypot(x - d.x, y - d.y) / (app.view.tile * 0.4)))
   for (let k = 1; k <= steps && app.drag === d; k++) {
-    const j = hitTile(app.view, d.x + ((x - d.x) * k) / steps, d.y + ((y - d.y) * k) / steps)
+    const px = d.x + ((x - d.x) * k) / steps, py = d.y + ((y - d.y) * k) / steps
+    // A finger wobbles: on touch, a point just over the line into the next row or column still counts as this one.
+    const j = d.touch ? hitTileSticky(app.view, px, py, d.last, 0.22) : hitTile(app.view, px, py)
     if (j < 0 || j === d.last) continue
     d.last = j; d.moved = true; clearTimeout(d.timer)
     if (canEdit(app.session, j) && app.session.cells[j] === d.from) place(j, d.to)
@@ -464,6 +470,7 @@ canvas.addEventListener('pointermove', (e) => {
 const lift = (e) => { if (app.drag && app.drag.id === e.pointerId) endDrag() }
 canvas.addEventListener('pointerup', lift)
 canvas.addEventListener('pointercancel', lift)
+canvas.addEventListener('lostpointercapture', lift)
 canvas.addEventListener('pointerleave', (e) => { if (e.pointerType === 'mouse') { app.pointer = null; if (app.hover !== -1) { app.hover = -1; if (app.session) syncHud() } } })
 canvas.addEventListener('contextmenu', (e) => e.preventDefault())
 
@@ -488,6 +495,7 @@ window.addEventListener('keydown', (e) => {
     return
   }
   if (k === 'Escape') {
+    if (document.documentElement.classList.contains('stage-focus')) return // the kit leaves full screen
     if (ui.modalOpen) { if (!app.session || !app.session.solved) { snd.back(); ui.closeModal() } }
     else if (ui.screen === 'play') actions.menu()
     else if (ui.screen !== 'title') actions.title()
@@ -539,17 +547,19 @@ function relayout() {
   const { w, h } = R.resize()
   app.portrait = w < h * 0.95
   stage.classList.toggle('portrait', app.portrait)
-  const fs = app.portrait ? Math.min(w / 24, h / 38) : Math.min(w / 62, h / 38)
+  stage.classList.toggle('short', !app.portrait && h < 520) // a phone on its side
+  // (A short landscape stage, a phone on its side, keeps text at 13px or more: the side HUD scrolls if it must.)
+  const fs = app.portrait ? Math.min(w / 24, h / 38) : Math.max(Math.min(w / 62, h / 38), Math.min(13, w / 62))
   uiRoot.style.fontSize = `${Math.max(12, Math.min(18, fs)).toFixed(2)}px`
-  if (ui.screen === 'play' && app.session) app.view = layoutBoard(app.session.p, ui.slot('play', stage))
-  if (ui.screen === 'title') { if (!demo.session) newDemo(); demo.view = layoutBoard(demo.session.p, ui.slot('title', stage), 64) }
+  if (ui.screen === 'play' && app.session) app.view = layoutBoard(app.session.p, ui.slot('play', canvas))
+  if (ui.screen === 'title') { if (!demo.session) newDemo(); demo.view = layoutBoard(demo.session.p, ui.slot('title', canvas), 64) }
 }
 
 function newDemo() {
   const now = performance.now()
   demo.session = createSession(generate({ size: 5, band: 'gentle', seed: (Math.random() * 4294967296) >>> 0 }))
   demo.anim = makeAnim(25, now)
-  demo.view = layoutBoard(demo.session.p, ui.slot('title', stage), 64)
+  demo.view = layoutBoard(demo.session.p, ui.slot('title', canvas), 64)
   demo.nextAt = now + 1100; demo.doneAt = 0
 }
 
@@ -595,7 +605,9 @@ function update(now) {
     }
   }
   if (!app.cardShown && now >= app.cardAt) showSolved(true)
-  R.board(app.view, s, app.anim, now, { cursor: app.cursorOn && !s.solved ? app.cursor : -1, focus: focusLookout(), look: app.pointer, reduced })
+  // While a finger paints, ring the tile under it (the finger itself hides the tile).
+  const under = app.drag && app.drag.touch && !s.solved ? app.drag.last : -1
+  R.board(app.view, s, app.anim, now, { cursor: under >= 0 ? under : app.cursorOn && !s.solved ? app.cursor : -1, focus: focusLookout(), look: app.pointer, reduced })
   if (confetti.update(dt)) R.confetti(confetti.parts)
 }
 
@@ -607,6 +619,7 @@ window.addEventListener('pagehide', () => { if (app.session) persist() })
 setInterval(() => { if (app.session && !app.session.solved && !document.hidden && !app.drag) persist() }, 5000)
 { const ro = new ResizeObserver(relayout); ro.observe(stage); for (const el of uiRoot.querySelectorAll('[data-slot]')) ro.observe(el) }
 document.addEventListener('fullscreenchange', relayout)
+stage.addEventListener('oddvale:fullscreen', relayout)
 document.fonts?.ready.then(relayout)
 
 // ------------------------------------------------------------------ boot

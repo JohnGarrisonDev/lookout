@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.2.0 — 2026-11-26
+
+- Plays better on phones: full screen on every phone, iPhone included, with a "Play full screen" button under the game.
+- Painting with a finger is steadier: a slight wobble no longer spills into the next row, a ring shows the tile under your finger, and a tap just outside the field's edge still lands on the edge tile.
+- Bigger buttons on touch screens, and a gentle buzz when you plant a hedge, when hedges touch and when you solve (Android, with sound on).
+- The solved card and today's vote fit a small phone screen, upright or sideways, and the side panel's text is larger on a phone held sideways.
+
 Newest first. Written for players.
 
 ## 1.1.0 (2026-11-25)

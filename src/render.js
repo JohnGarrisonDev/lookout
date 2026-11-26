@@ -22,10 +22,38 @@ export function layoutBoard(p, rect, maxTile = 100) {
   const bw = tile * p.w, bh = tile * p.h
   return { tile, w: p.w, h: p.h, bw, bh, x: Math.round(rect.x + (rect.w - bw) / 2), y: Math.round(rect.y + (rect.h - bh) / 2) }
 }
-export function hitTile(v, x, y) {
+/** The tile under (x, y), or -1. With `inset` (a fraction of a tile), points within that rim of a tile's edge miss. */
+export function hitTile(v, x, y, inset = 0) {
   if (!v) return -1
-  const cx = Math.floor((x - v.x) / v.tile), cy = Math.floor((y - v.y) / v.tile)
+  const fx = (x - v.x) / v.tile, fy = (y - v.y) / v.tile
+  const cx = Math.floor(fx), cy = Math.floor(fy)
+  if (cx < 0 || cy < 0 || cx >= v.w || cy >= v.h) return -1
+  if (inset > 0) { const ux = fx - cx, uy = fy - cy; if (ux < inset || ux > 1 - inset || uy < inset || uy > 1 - inset) return -1 }
+  return cy * v.w + cx
+}
+/**
+ * Hit test for a finger that is painting from tile `last`: a point that has only just crossed into a neighbouring
+ * row or column (less than `inset` of a tile past the line) still counts as the last row or column, so a wobbly
+ * finger running along a row does not spill into the row next to it.
+ */
+export function hitTileSticky(v, x, y, last, inset = 0.2) {
+  if (!v) return -1
+  const fx = (x - v.x) / v.tile, fy = (y - v.y) / v.tile
+  let cx = Math.floor(fx), cy = Math.floor(fy)
+  if (last >= 0) {
+    const lx = last % v.w, ly = Math.floor(last / v.w)
+    if (cx === lx + 1 && fx < cx + inset) cx = lx; else if (cx === lx - 1 && fx > lx - inset) cx = lx
+    if (cy === ly + 1 && fy < cy + inset) cy = ly; else if (cy === ly - 1 && fy > ly - inset) cy = ly
+  }
   return cx < 0 || cy < 0 || cx >= v.w || cy >= v.h ? -1 : cy * v.w + cx
+}
+/** Like hitTile, but a point up to `slack` tiles outside the board snaps to the nearest edge tile. */
+export function hitTileNear(v, x, y, slack = 0.4) {
+  if (!v) return -1
+  const fx = (x - v.x) / v.tile, fy = (y - v.y) / v.tile
+  if (fx < -slack || fy < -slack || fx >= v.w + slack || fy >= v.h + slack) return -1
+  const cx = Math.max(0, Math.min(v.w - 1, Math.floor(fx))), cy = Math.max(0, Math.min(v.h - 1, Math.floor(fy)))
+  return cy * v.w + cx
 }
 export const tileCentre = (v, i) => ({ x: v.x + ((i % v.w) + 0.5) * v.tile, y: v.y + (Math.floor(i / v.w) + 0.5) * v.tile })
 

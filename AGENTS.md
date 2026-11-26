@@ -10,7 +10,9 @@ Lookout is an Oddvale Games title. Read the hub's `GAME_GUIDE.md` first (no buil
 - `src/render.js` draws the canvas every frame from a session plus an `anim` object (`makeAnim`: when each tile last changed, when a hedge became "bad", solve time, the hint on show, mistake flags). Logic is instant; visuals catch up.
 - The canvas fills the stage. DOM layouts contain an empty `.slot`; `main.js` measures it and `layoutBoard` fits the board inside. So layout is CSS: move the slot, the board follows.
 - `kit/talk.js` (hub kit, do not edit) adds the anonymous player-input widgets: `dailyTalk` fills a `.talk-slot` at the bottom of the solved card for **today's** daily fields only (boards `small`/`medium`/`large` from ids `s`/`m`/`l`, score = the recorded solve time in whole seconds, lower is better), and `tellUs` fills `#tell-us` in the info section. Both stay hidden when the studio API is unreachable.
-- `main.js` adds `.portrait` to the stage when it is taller than wide and sets the `.ui` font-size from the stage size. All sizes in `game.css` are in `em`. The stage is always a sunny field, also in dark mode.
+- `main.js` adds `.portrait` to the stage when it is taller than wide (and `.short` when it is a landscape stage under 520px tall, a phone on its side: two-column solved card) and sets the `.ui` font-size from the stage size.
+- Touch (1.2): taps use `hitTileNear` (a tap up to 0.4 tile outside the frame lands on the edge tile); finger drags use `hitTileSticky` (a point less than 0.22 tile past a row or column line still counts as the last one, so a wobble does not paint the next row); the tile under a painting finger gets the cursor ring. `lostpointercapture` ends a stroke like `pointercancel`. `haptic()` on a touch placement, touching hedges, long-press dot and the solve. Hit helpers are pure and tested in `tests/hit.test.js`.
+- Full screen (kit `wireChrome`): `.ui` carries the kit's `stage-inset` class and the board slots are measured against the canvas, so both keep clear of notches; the HUD keeps the top-right corner free for the kit's exit button. All sizes in `game.css` are in `em`. The stage is always a sunny field, also in dark mode.
 
 ## Rules and cell codes
 
@@ -82,7 +84,9 @@ Serve the folder (see README) and open `/?debug`. `window.__game` has `state()`,
 
 - The corner tag (what a lookout sees now) is small on 9x9 phone boards; the status line shows the same numbers when you tap a lookout.
 - Undo history is lost on reload.
-- Short landscape windows squeeze the side HUD; it scrolls rather than shrinking the board.
+- Short landscape windows squeeze the side HUD; it scrolls rather than shrinking the board (text stays at 13px or more).
+- Not checked on a real phone: native full screen (the dev browser pane never settles `requestFullscreen`; the kit falls back to focus mode), iPhone Safari, real multi-touch.
+- The 14-day archive buttons are 39px wide at 360px (53px tall); seven across do not fit at 44px.
 - The solved card covers part of the board (left side on desktop, lower half on phones).
 - `trial` hints say what would break but not the chain of steps that gets there.
 - Fiendish generation limits how many lookouts it tries to remove with what-if checks (14), so some fiendish boards need only one what-if.

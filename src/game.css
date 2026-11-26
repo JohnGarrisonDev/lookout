@@ -235,3 +235,37 @@
 /* Phones: the card already sits over the lower half of the field; with the vote under it, cap it and let it scroll. */
 .portrait .modal.solved .sheet { max-height: 66%; }
 .sheet .talk-daily .talk-row { gap: 6px; }
+
+/* ---- phones and full screen (1.2) */
+.iconbtn { min-width: 44px; min-height: 44px; }
+.ui .btn:active, .tool:active, .dcard:active { filter: brightness(0.96); }
+@media (pointer: coarse) {
+  .ui .btn, .ui .btn.small { min-height: 44px; }
+  .sheet .talk-daily.compact .talk-choice { min-height: 44px; }
+  .dots button { width: 2.75em; height: 2.75em; min-width: 44px; min-height: 44px; }
+}
+/* Full screen: .ui is a kit .stage-inset, clear of notches and the home bar like the canvas (the board is measured against
+   the canvas), and the top-right corner stays free for the kit's exit button. */
+.stage.is-full .bar { padding-right: 50px; }
+.stage.is-full.portrait .hud { padding-right: 58px; }
+.stage.is-full:not(.portrait) .play .slot { margin-right: 3.6em; }
+.stage.is-full .stage-exit { top: max(8px, env(safe-area-inset-top, 0px)); right: max(8px, env(safe-area-inset-right, 0px)); }
+/* The solved card on a phone: time and hints side by side and a smaller heading, so the vote under it fits. */
+.portrait .modal.solved .sheet { max-height: 84%; gap: 0.5em; padding: 0.85em 1em 1em; }
+.portrait .modal.solved .sheet h3 { font-size: 1.8em; }
+.portrait .modal.solved .result { display: flex; justify-content: center; gap: 1.4em; }
+.portrait .modal.solved .result div { border: 0; padding: 0; gap: 0.5em; }
+.portrait .modal.solved .streak b { font-size: 1.6em; }
+.portrait .modal.solved .streak b.pipbox { font-size: 1.1em; }
+.portrait .modal.solved .row { gap: 0.5em; }
+.portrait .sheet .talk-daily { padding-top: 8px; gap: 5px; }
+.stage:not(.portrait) .status, .stage:not(.portrait) .tip { font-size: 1em; }
+/* The solved card on a phone held sideways: results on the left, buttons and the vote on the right. */
+.short .modal.solved { justify-items: center; padding: 0.6em; }
+.short .modal.solved .sheet { width: min(100%, 46em); grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr); column-gap: 1.4em; row-gap: 0.45em; padding: 0.9em 1.2em 1em; align-items: center; }
+.short .modal.solved .sheet > * { grid-column: 1; }
+.short .modal.solved .sheet > .row { grid-column: 2; grid-row: 1 / span 3; }
+.short .modal.solved .sheet > .talk-slot { grid-column: 2; grid-row: 4 / span 4; align-self: start; }
+.short .modal.solved .sheet h3 { font-size: 1.9em; }
+.short .modal.solved .stars.big { font-size: 2.4em; }
+.short .sheet .talk-daily { border-top: 0; padding-top: 0; }
