@@ -51,5 +51,5 @@ export function formatTime(sec) {
 export function shareText(key, rec) {
   const parts = DAILY.map((d) => `${d.letter} ${rec && rec[d.id] ? formatTime(rec[d.id].t) : '–'}`)
   const hints = DAILY.reduce((a, d) => a + (rec && rec[d.id] ? rec[d.id].h : 0), 0)
-  return `Lookout ${key} · ${parts.join(' · ')}${hints ? ` 💡${hints}` : ''}\ngames.oddvale.com/lookout`
+  return `Lookout ${key} · ${parts.join(' · ')}${hints ? ` 💡${hints}` : ''}\nhttps://games.oddvale.com/lookout/`
 }

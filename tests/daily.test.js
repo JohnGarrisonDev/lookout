@@ -68,7 +68,7 @@ test('streaks count days where Small was solved on the day', () => {
 test('time and share text', () => {
   assert.equal(formatTime(0), '0:00'); assert.equal(formatTime(48.9), '0:48'); assert.equal(formatTime(151), '2:31'); assert.equal(formatTime(3725), '1:02:05'); assert.equal(formatTime(-5), '0:00')
   const rec = { s: { t: 48, h: 0, c: 0 }, m: { t: 151, h: 1, c: 0 }, l: { t: 362, h: 0, c: 0 } }
-  assert.equal(shareText('2026-11-24', rec), 'Lookout 2026-11-24 · S 0:48 · M 2:31 · L 6:02 💡1\ngames.oddvale.com/lookout')
-  assert.equal(shareText('2026-11-24', { s: { t: 48, h: 0, c: 0 } }), 'Lookout 2026-11-24 · S 0:48 · M – · L –\ngames.oddvale.com/lookout')
-  assert.ok(shareText('2026-11-24', undefined).endsWith('games.oddvale.com/lookout'))
+  assert.equal(shareText('2026-11-24', rec), 'Lookout 2026-11-24 · S 0:48 · M 2:31 · L 6:02 💡1\nhttps://games.oddvale.com/lookout/')
+  assert.equal(shareText('2026-11-24', { s: { t: 48, h: 0, c: 0 } }), 'Lookout 2026-11-24 · S 0:48 · M – · L –\nhttps://games.oddvale.com/lookout/')
+  assert.ok(shareText('2026-11-24', undefined).endsWith('\nhttps://games.oddvale.com/lookout/'))
 })

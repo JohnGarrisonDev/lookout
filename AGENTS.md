@@ -10,6 +10,9 @@ Lookout is an Oddvale Games title. Read the hub's `GAME_GUIDE.md` first (no buil
 - `src/render.js` draws the canvas every frame from a session plus an `anim` object (`makeAnim`: when each tile last changed, when a hedge became "bad", solve time, the hint on show, mistake flags). Logic is instant; visuals catch up.
 - The canvas fills the stage. DOM layouts contain an empty `.slot`; `main.js` measures it and `layoutBoard` fits the board inside. So layout is CSS: move the slot, the board follows.
 - `kit/talk.js` (hub kit, do not edit) adds the anonymous player-input widgets: `dailyTalk` fills a `.talk-slot` at the bottom of the solved card for **today's** daily fields only (boards `small`/`medium`/`large` from ids `s`/`m`/`l`, score = the recorded solve time in whole seconds, lower is better), and `tellUs` fills `#tell-us` in the info section. Both stay hidden when the studio API is unreachable.
+- Times (1.3): `wholeSeconds()` in `save.js` (floor, at least 1) is the one rule for solve times: `onSolved` stores it in the result shown on the card, and `recordJourney`/`recordDaily` save it. The HUD clock also floors.
+- Copy result: `copyText` tries the clipboard API, then `execCommand`; if both fail, `showShareBox` puts the text in a read-only, selected `textarea.sharebox` above the button row (the daily screen's box is removed when the day changes). Share text ends with `https://games.oddvale.com/lookout/`.
+- Peek (1.3): the solved card has an eye button (`data-act="peek"`, top-right of the sheet). `ui.peek(true)` adds `.peek` to the modal (sheet hidden, modal `pointer-events: none`) and shows a "Show results" button (`.unpeek`, bottom centre in portrait, over the locked tools in side-panel layouts). A tap on the canvas or Escape brings the card back. While peeking, `.tools` is hidden (`.ui:has(.modal.peek)`) so the 44px button never sits on them. `openModal`/`closeModal` reset it; `ui.peeking` tells you.
 - `main.js` adds `.portrait` to the stage when it is taller than wide (and `.short` when it is a landscape stage under 520px tall, a phone on its side: two-column solved card) and sets the `.ui` font-size from the stage size.
 - Touch (1.2): taps use `hitTileNear` (a tap up to 0.4 tile outside the frame lands on the edge tile); finger drags use `hitTileSticky` (a point less than 0.22 tile past a row or column line still counts as the last one, so a wobble does not paint the next row); the tile under a painting finger gets the cursor ring. `lostpointercapture` ends a stroke like `pointercancel`. `haptic()` on a touch placement, touching hedges, long-press dot and the solve. Hit helpers are pure and tested in `tests/hit.test.js`.
 - Full screen (kit `wireChrome`): `.ui` carries the kit's `stage-inset` class and the board slots are measured against the canvas, so both keep clear of notches; the HUD keeps the top-right corner free for the kit's exit button. All sizes in `game.css` are in `em`. The stage is always a sunny field, also in dark mode.
@@ -82,12 +85,12 @@ Serve the folder (see README) and open `/?debug`. `window.__game` has `state()`,
 
 ## Known weak spots
 
-- The corner tag (what a lookout sees now) is small on 9x9 phone boards; the status line shows the same numbers when you tap a lookout.
+- The corner tag (what a lookout sees now) was enlarged in 1.3 for tiles under 56px (`tagGeom` in `render.js`, at least 12px digits, 11px for two digits; it pokes up to 2px past the tile's corner). Two-digit counts are still tight at 34px tiles. Not checked on a real phone.
 - Undo history is lost on reload.
 - Short landscape windows squeeze the side HUD; it scrolls rather than shrinking the board (text stays at 13px or more).
 - Not checked on a real phone: native full screen (the dev browser pane never settles `requestFullscreen`; the kit falls back to focus mode), iPhone Safari, real multi-touch.
 - The 14-day archive buttons are 39px wide at 360px (53px tall); seven across do not fit at 44px.
-- The solved card covers part of the board (left side on desktop, lower half on phones).
+- The solved card covers part of the board (left side on desktop, lower half on phones) until the player presses its eye button (1.3).
 - `trial` hints say what would break but not the chain of steps that gets there.
 - Fiendish generation limits how many lookouts it tries to remove with what-if checks (14), so some fiendish boards need only one what-if.
 - The canvas redraws every frame even when idle.
@@ -99,7 +102,7 @@ Serve the folder (see README) and open `/?debug`. `window.__game` has `state()`,
 - Weekly giant (12x12 with pinch-zoom), which needs pan and zoom on phones.
 - Symmetric or themed lookout layouts as an extra generator path (`gen: 2`).
 - Share image: the hedge pattern as emoji rows or a small PNG once all three dailies are done.
-- Per-level best times on the level buttons; a "no dots" badge.
-- Colour-blind friendly palette toggle and a larger-tag option for small screens.
+- A "no dots" badge. (Per-level best times on the level buttons shipped in 1.3: `setLevels({ bests })`.)
+- Colour-blind friendly palette toggle.
 - Save the undo stack with the board.
 - Idle frame throttling to save battery.

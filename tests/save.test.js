@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { defaults, sanitize, recordJourney, recordDaily, pruneDailyProgress, totalStars, solvedCount } from '../src/logic/save.js'
+import { defaults, sanitize, wholeSeconds, recordJourney, recordDaily, pruneDailyProgress, totalStars, solvedCount } from '../src/logic/save.js'
 import { LEVEL_COUNT } from '../src/logic/levels.js'
 
 test('junk becomes a clean default save', () => {
@@ -67,4 +67,13 @@ test('old in-progress dailies are pruned', () => {
   s.progress.daily = { '2026-11-01:s': { cells: '0' }, '2026-11-11:m': { cells: '0' }, '2026-11-24:l': { cells: '0' } }
   pruneDailyProgress(s, '2026-11-11')
   assert.deepEqual(Object.keys(s.progress.daily), ['2026-11-11:m', '2026-11-24:l'])
+})
+
+test('solve times are whole seconds rounded down everywhere (card, best time, daily record, share)', () => {
+  assert.equal(wholeSeconds(1.9), 1); assert.equal(wholeSeconds(7.99), 7); assert.equal(wholeSeconds(0.3), 1)
+  const s = defaults()
+  recordJourney(s, 0, 3, 1.9)
+  assert.equal(s.journey.best[0], 1)
+  recordDaily(s, '2026-11-24', 's', { time: 7.9, hints: 0, checks: 0 }, '2026-11-24')
+  assert.equal(s.daily.history['2026-11-24'].s.t, 7)
 })

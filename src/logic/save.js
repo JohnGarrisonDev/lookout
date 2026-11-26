@@ -75,9 +75,12 @@ export function sanitize(raw) {
 export const totalStars = (save) => save.journey.stars.reduce((a, b) => a + b, 0)
 export const solvedCount = (save) => save.journey.stars.reduce((a, b) => a + (b > 0 ? 1 : 0), 0)
 
+/** A solve time as it is stored, shown and shared: whole seconds, rounded down (at least 1). One rule everywhere. */
+export const wholeSeconds = (time) => Math.max(1, Math.floor(time))
+
 /** Record a Journey result. Keeps the best stars and the best time. Returns { newBest } (a faster time than an earlier one). */
 export function recordJourney(save, i, stars, time) {
-  const t = Math.max(1, Math.round(time)), prev = save.journey.best[i]
+  const t = wholeSeconds(time), prev = save.journey.best[i]
   save.journey.stars[i] = Math.max(save.journey.stars[i], stars)
   if (!prev || t < prev) save.journey.best[i] = t
   return { newBest: prev > 0 && t < prev, prev }
@@ -86,7 +89,7 @@ export function recordJourney(save, i, stars, time) {
 /** Record a Daily result (first solve only). `today` decides whether it counts for the streak. Returns the stored record. */
 export function recordDaily(save, date, id, res, today) {
   const day = save.daily.history[date] || (save.daily.history[date] = {})
-  if (!day[id]) { day[id] = { t: Math.max(1, Math.round(res.time)), h: res.hints | 0, c: res.checks | 0 }; if (date !== today) day[id].late = true }
+  if (!day[id]) { day[id] = { t: wholeSeconds(res.time), h: res.hints | 0, c: res.checks | 0 }; if (date !== today) day[id].late = true }
   return day[id]
 }
 

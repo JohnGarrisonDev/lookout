@@ -1,7 +1,7 @@
 // Hit testing for taps and drags on the field (render.js exports pure helpers next to the drawing code).
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { hitTile, hitTileNear, hitTileSticky, layoutBoard } from '../src/render.js'
+import { hitTile, hitTileNear, hitTileSticky, layoutBoard, tagGeom } from '../src/render.js'
 
 const v = layoutBoard({ w: 9, h: 9 }, { x: 0, y: 0, w: 360, h: 360 }) // tile 38, board at x = y = 9
 
@@ -40,4 +40,18 @@ test('hitTileSticky keeps a wobbling finger in its row and column until it is cl
   assert.equal(at(-0.1, 0.5, 0), 0) // a hair off the board's edge: still the edge tile
   assert.equal(at(-0.5, 0.5, 0), -1) // clearly off the board
   assert.equal(at(2.5, 2.5, -1), 2 * 9 + 2) // no last tile: plain hit test
+})
+
+test('the "sees now" tag stays readable on a 9x9 phone field and inside its tile', () => {
+  for (const t of [30, 34, 35, 38, 44, 55]) {
+    const half = t * 0.42
+    for (const sees of [3, 12]) {
+      const g = tagGeom(t, half, sees)
+      assert.ok(g.fs >= (sees > 9 ? 11 : 12), `font ${g.fs}px at tile ${t}`)
+      // the tag may poke past the body but stays within a few px of its own tile
+      assert.ok(g.bx + g.r <= t / 2 + 3.5 && -(g.by - g.r) <= t / 2 + 3.5, `tile ${t}`)
+    }
+  }
+  const big = tagGeom(80, 80 * 0.42, 5) // big tiles keep the 1.0 look
+  assert.equal(big.r, 16)
 })

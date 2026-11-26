@@ -15,6 +15,18 @@ export function makeAnim(n, now = 0) {
   return { placedAt: new Float64Array(n).fill(-1e9), badAt: new Float64Array(n).fill(-1e9), moodAt: new Float64Array(n).fill(-1e9), solvedAt: 0, hint: null, flags: null, born: now }
 }
 
+/**
+ * The "sees now" corner tag of a lookout on a tile of size t (body half-size `half`): radius, centre and font size.
+ * Big tiles keep the 1.0 look (a fifth of the tile). Small tiles (a 9x9 field on a phone, about 35px) get a tag that grows
+ * to a 12px-plus number and pokes up to 2px past the tile's corner, so it stays readable without hiding the face.
+ */
+export function tagGeom(t, half, sees) {
+  const two = sees > 9
+  if (t >= 56) { const r = Math.max(8, t * 0.2); return { r, bx: half - r * 0.62, by: -half + r * 0.62, fs: Math.round(r * (two ? 1.02 : 1.25)) } }
+  const r = Math.min(11.5, Math.max(9.5, t * 0.27)), c = Math.min(half - r * 0.4, t / 2 + 2 - r)
+  return { r, bx: c, by: -c, fs: Math.max(two ? 11 : 12, Math.round(r * (two ? 1.12 : 1.34))) }
+}
+
 /** Fit a w x h board into a rectangle { x, y, w, h } (CSS pixels). */
 export function layoutBoard(p, rect, maxTile = 100) {
   const pad = 5
@@ -160,7 +172,7 @@ export function createRenderer(canvas) {
     g.font = `800 ${Math.round(t * 0.46)}px ${FONT.display}`
     g.fillText(String(o.n), 0, half * 0.82)
     // corner tag: what it sees right now, or a tick once that is exactly right
-    const r = Math.max(8, t * 0.2), bx = half - r * 0.62, by = -half + r * 0.62
+    const { r, bx, by, fs } = tagGeom(t, half, o.sees)
     g.fillStyle = mood === 1 ? '#fffdf8' : mood === 2 ? C.orange : '#fffdf8'; g.strokeStyle = C.ink; g.lineWidth = Math.max(1.2, t * 0.035)
     g.beginPath(); g.arc(bx, by, r, 0, 7); g.fill(); g.stroke()
     if (mood === 1) {
@@ -168,7 +180,7 @@ export function createRenderer(canvas) {
       g.beginPath(); g.moveTo(bx - r * 0.45, by + r * 0.02); g.lineTo(bx - r * 0.1, by + r * 0.4); g.lineTo(bx + r * 0.48, by - r * 0.38); g.stroke()
     } else {
       g.fillStyle = C.ink; g.textBaseline = 'middle'
-      g.font = `700 ${Math.round(r * (o.sees > 9 ? 1.02 : 1.25))}px ${FONT.body}`
+      g.font = `800 ${fs}px ${FONT.body}`
       g.fillText(String(o.sees), bx, by + r * 0.08)
     }
     g.restore()

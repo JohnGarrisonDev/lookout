@@ -16,6 +16,7 @@ export const ICON = {
   lock: svg('<rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>'),
   minus: svg('<path d="M6 12h12"/>'),
   plus: svg('<path d="M6 12h12M12 6v12"/>'),
+  eye: svg('<path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="3"/>'),
 }
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]))
 const stars = (n, cls = '') => `<span class="stars ${cls}" aria-label="${n} of 3 stars">${[0, 1, 2].map((k) => `<i class="${k < n ? 'on' : ''}">★</i>`).join('')}</span>`
@@ -114,7 +115,7 @@ export function createUI(root, actions) {
     </div>
   </section>
 
-  <div class="modal" data-f="modal" hidden><div class="sheet" role="dialog" aria-modal="true" data-f="sheet"></div></div>
+  <div class="modal" data-f="modal" hidden><div class="sheet" role="dialog" aria-modal="true" data-f="sheet"></div><button class="btn primary unpeek" data-act="unpeek" data-f="unpeek" hidden>Show results</button></div>
   <div class="toast" data-f="toast" role="status" aria-live="polite" hidden></div>`
 
   const f = (name) => root.querySelector(`[data-f="${name}"]`)
@@ -161,10 +162,11 @@ export function createUI(root, actions) {
           <span>${x.letter}</span><b>${x.day}</b>${pips(x.pips)}
         </button>`).join('')
       f('d-copy').disabled = !d.canCopy; f('d-copy').textContent = 'Copy result'
+      root.querySelector('[data-screen="daily"] .sharebox')?.remove() // a copy box from another day would be stale
       f('d-today').hidden = d.isToday
     },
 
-    setLevels({ chapter, starList, total, resume }) {
+    setLevels({ chapter, starList, total, resume, bests = [] }) {
       const ch = CHAPTERS[chapter]
       f('l-total').innerHTML = `<i class="star">★</i> ${total} / ${CHAPTERS.length * PER_CHAPTER * 3}`
       f('l-chno').textContent = `Chapter ${chapter + 1} of ${CHAPTERS.length}`
@@ -175,8 +177,9 @@ export function createUI(root, actions) {
       for (let n = 0; n < PER_CHAPTER; n++) {
         const i = chapter * PER_CHAPTER + n, open = isUnlocked(starList, i), size = RECIPES[i].size, st = starList[i] | 0
         const cls = ['lvl', st ? 'done' : '', i === firstOpen ? 'next' : '', open ? '' : 'locked'].join(' ')
-        html += `<button class="${cls}" data-act="level" data-i="${i}" ${open ? '' : 'disabled'} aria-label="Level ${levelLabel(i)}, ${size} by ${size}${open ? `, ${st} stars` : ', locked'}">`
-          + (open ? `<b>${n + 1}</b>${stars(st)}<small>${size}×${size}${i === resume ? ' · …' : ''}</small>` : `${ICON.lock}<small>${size}×${size}</small>`) + '</button>'
+        const best = open && bests[i] ? bests[i] : ''
+        html += `<button class="${cls}" data-act="level" data-i="${i}" ${open ? '' : 'disabled'} aria-label="Level ${levelLabel(i)}, ${size} by ${size}${open ? `, ${st} stars` : ', locked'}${best ? `, best time ${best}` : ''}">`
+          + (open ? `<b>${n + 1}</b>${stars(st)}<small>${size}×${size}${best ? ` · <span class="best">${best}</span>` : ''}${i === resume ? ' · …' : ''}</small>` : `${ICON.lock}<small>${size}×${size}</small>`) + '</button>'
       }
       f('l-grid').innerHTML = html
       f('l-dots').innerHTML = CHAPTERS.map((_, c) => `<button class="${c === chapter ? 'on' : ''}" data-act="chapter-go" data-c="${c}" aria-label="Chapter ${c + 1}"></button>`).join('')
@@ -214,8 +217,16 @@ export function createUI(root, actions) {
     },
 
     get modalOpen() { return !f('modal').hidden },
-    closeModal() { f('modal').hidden = true; f('sheet').innerHTML = ''; f('modal').className = 'modal' },
-    openModal(html, cls = '') { f('sheet').innerHTML = html; f('modal').className = `modal ${cls}`; f('modal').hidden = false; ui.focusFirst() },
+    closeModal() { f('modal').hidden = true; f('sheet').innerHTML = ''; f('modal').className = 'modal'; f('unpeek').hidden = true },
+    /** The solved card can step aside so the finished field shows in full; a "Show results" button brings it back. */
+    get peeking() { return f('modal').classList.contains('peek') },
+    peek(on) {
+      const m = f('modal')
+      if (m.hidden || !m.classList.contains('solved')) return
+      m.classList.toggle('peek', on); f('unpeek').hidden = !on
+      ;(on ? f('unpeek') : f('sheet').querySelector('.peekbtn'))?.focus({ preventScroll: true })
+    },
+    openModal(html, cls = '') { f('sheet').innerHTML = html; f('modal').className = `modal ${cls}`; f('unpeek').hidden = true; f('modal').hidden = false; ui.focusFirst() },
 
     openPause({ title, timer, lines, items }) {
       ui.openModal(`
@@ -233,6 +244,7 @@ export function createUI(root, actions) {
       const daily = d.daily ? `
         <div class="streak"><div><b>${d.daily.streak}</b><span>day streak</span></div><div><b>${d.daily.best}</b><span>best</span></div><div><b class="pipbox">${pips(d.daily.pips)}</b><span>${esc(d.daily.label)}</span></div></div>` : ''
       ui.openModal(`
+        <button class="iconbtn peekbtn" data-act="peek" aria-label="See the finished field" title="See the finished field">${ICON.eye}</button>
         <span class="eyebrow">${esc(d.sub)}</span>
         <h3>${esc(d.heading)}</h3>
         ${d.stars ? stars(d.stars, d.animate ? 'big pop' : 'big') : ''}

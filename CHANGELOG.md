@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.3.0 — 2026-11-26
+
+- See your finished field: the solved card has an eye button that tucks it away so the whole field shows, confetti and all. Tap "Show results" (or the field) to bring the card back.
+- The little "sees now" number on each lookout is bigger and bolder on small screens, so it reads on a 9x9 field on a phone.
+- Journey levels you have solved now show your best time on their button. Something to beat.
+- Times agree everywhere: the solved card, your best time and the shared result all count whole seconds the same way.
+- Copy result: if your browser will not copy, the result appears in a box, selected, ready to copy by hand. The shared link is now the full https://games.oddvale.com/lookout/.
+- "Show results" is a full-size button and no longer sits on top of the tools.
+
 ## 1.2.0 — 2026-11-26
 
 - Plays better on phones: full screen on every phone, iPhone included, with a "Play full screen" button under the game.

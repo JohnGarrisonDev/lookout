@@ -7,7 +7,7 @@ import { hintFor } from './logic/solver.js'
 import { createSession, setCell, beginStroke, endStroke, undo, redo, clearAll, cycle, canEdit, mistakes, starsFor, snapshot, EMPTY, HEDGE, DOT } from './logic/session.js'
 import { CHAPTERS, LEVEL_COUNT, PER_CHAPTER, journeyLevel, levelLabel, isUnlocked } from './logic/levels.js'
 import { DAILY, ARCHIVE_DAYS, dateKey, shiftDay, dayParts, dailyPuzzle, streakInfo, formatTime, shareText } from './logic/daily.js'
-import { defaults, sanitize, recordJourney, recordDaily, pruneDailyProgress, totalStars, solvedCount } from './logic/save.js'
+import { defaults, sanitize, wholeSeconds, recordJourney, recordDaily, pruneDailyProgress, totalStars, solvedCount } from './logic/save.js'
 import { createRenderer, layoutBoard, hitTile, hitTileNear, hitTileSticky, tileCentre, makeAnim } from './render.js'
 import { createConfetti } from './fx.js'
 import { createUI } from './ui.js'
@@ -62,6 +62,8 @@ const actions = {
   'free-resume'() { snd.click(); const p = save.progress.free; if (p) startFree(p.def, p.board) },
   menu() { if (app.session && !app.session.solved) { snd.click(); openPause() } },
   resume() { snd.click(); ui.closeModal() },
+  peek() { if (app.session && app.session.solved) { snd.peek(); ui.peek(true) } },
+  unpeek() { snd.click(); ui.peek(false) },
   restart() {
     const s = app.session
     if (!s || s.solved) return
@@ -87,9 +89,10 @@ const actions = {
   async copy(_, el) {
     const key = app.session && app.mode === 'daily' ? app.meta.date : app.day, rec = save.daily.history[key]
     if (!rec) return
-    const ok = await copyText(shareText(key, rec))
+    const text = shareText(key, rec), ok = await copyText(text)
     snd.copy()
-    if (el) { el.textContent = ok ? 'Copied!' : 'Copy failed'; setTimeout(() => { if (el.isConnected) el.textContent = 'Copy result' }, 1600) }
+    if (el) { el.textContent = ok ? 'Copied!' : 'Copy it below'; setTimeout(() => { if (el.isConnected) el.textContent = 'Copy result' }, 1600) }
+    if (!ok && el) showShareBox(el, text)
   },
 }
 const ui = createUI(uiRoot, actions)
@@ -144,7 +147,8 @@ function showDaily(keepFocus = false) {
 function showLevels(keepFocus = false) {
   save.last = null
   ui.closeModal()
-  ui.setLevels({ chapter: app.chapter, starList: Array.from({ length: LEVEL_COUNT }, (_, i) => save.journey.stars[i] | 0), total: totalStars(save), resume: save.progress.journey ? save.progress.journey.level : -1 })
+  ui.setLevels({ chapter: app.chapter, starList: Array.from({ length: LEVEL_COUNT }, (_, i) => save.journey.stars[i] | 0), total: totalStars(save), resume: save.progress.journey ? save.progress.journey.level : -1,
+    bests: Array.from({ length: LEVEL_COUNT }, (_, i) => (save.journey.best[i] > 0 ? formatTime(save.journey.best[i]) : '')) })
   ui.show('levels'); relayout()
   if (!keepFocus) ui.focusFirst()
 }
@@ -336,7 +340,7 @@ function doCheck() {
 function onSolved() {
   const s = app.session, meta = app.meta, today = dateKey()
   endDrag()
-  const res = { mode: app.mode, time: s.time, hints: s.hints, checks: s.checks, stars: starsFor(s.hints, s.checks) }
+  const res = { mode: app.mode, time: wholeSeconds(s.time), hints: s.hints, checks: s.checks, stars: starsFor(s.hints, s.checks) }
   if (app.mode === 'journey') { const r = recordJourney(save, meta.index, res.stars, s.time); res.newBest = r.newBest; res.prev = r.prev }
   else if (app.mode === 'daily') {
     recordDaily(save, meta.date, meta.id, res, today)
@@ -398,6 +402,19 @@ function showSolved(animate) {
   if (animate) for (let k = 0; k < stars; k++) setTimeout(() => snd.star(k), 380 + k * 260)
 }
 
+/** When the browser refuses both clipboard routes: show the result in a read-only, selected box to copy by hand. */
+function showShareBox(el, text) {
+  const row = el.closest('.row') || el.parentElement
+  let box = row.parentElement.querySelector('.sharebox')
+  if (!box) {
+    box = document.createElement('textarea')
+    box.className = 'sharebox'; box.readOnly = true; box.rows = 3; box.setAttribute('aria-label', 'Your result, to copy by hand')
+    row.before(box)
+  }
+  box.value = text
+  box.focus({ preventScroll: true }); box.select()
+}
+
 async function copyText(text) {
   try { await navigator.clipboard.writeText(text); return true } catch { /* fall through to the old way */ }
   try {
@@ -425,6 +442,7 @@ function endDrag() {
 canvas.addEventListener('pointerdown', (e) => {
   const { x, y } = pos(e)
   app.pointer = { x, y }
+  if (ui.peeking) { e.preventDefault(); actions.unpeek(); return } // a tap on the finished field brings the card back
   if (!playing() || (e.pointerType === 'mouse' && e.button !== 0 && e.button !== 2)) return
   if (app.drag) return // a second finger does nothing
   const touch = e.pointerType !== 'mouse'
@@ -496,7 +514,8 @@ window.addEventListener('keydown', (e) => {
   }
   if (k === 'Escape') {
     if (document.documentElement.classList.contains('stage-focus')) return // the kit leaves full screen
-    if (ui.modalOpen) { if (!app.session || !app.session.solved) { snd.back(); ui.closeModal() } }
+    if (ui.peeking) actions.unpeek()
+    else if (ui.modalOpen) { if (!app.session || !app.session.solved) { snd.back(); ui.closeModal() } }
     else if (ui.screen === 'play') actions.menu()
     else if (ui.screen !== 'title') actions.title()
     return
